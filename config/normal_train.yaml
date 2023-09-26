@@ -1,0 +1,6 @@
+prepare_data:
+  in_op_threads: false
+  limit_rows:
+  shards: 20
+  map_workers: 4
+
