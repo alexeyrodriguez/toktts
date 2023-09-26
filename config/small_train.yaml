@@ -1,4 +1,5 @@
 prepare_data:
+  clip_audio_secs: 4
   in_op_threads: true
   limit_rows: 100
   shards: 4
