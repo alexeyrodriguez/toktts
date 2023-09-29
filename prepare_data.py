@@ -4,10 +4,14 @@ from datasets import load_dataset, Audio, concatenate_datasets
 from transformers import EncodecModel, AutoProcessor
 import torch
 import os
-from transformers import CanineTokenizer
+from transformers import CanineTokenizer, AutoTokenizer
 from datasets.fingerprint import Hasher
 
 from transformers import DataCollatorWithPadding, DataCollatorForSeq2Seq
+
+TOK_TOKS = 1024
+TOK_BOS = 1024
+TOK_EOS = 1025
 
 def tokenize_speech(cfg, ds, concat_shards=True):
     """
@@ -32,6 +36,7 @@ def tokenize_speech(cfg, ds, concat_shards=True):
         codes = encoder_outputs["audio_codes"] # shape (#examples, channels, codebook, tokens)
         codes = codes[0, 0] # select the only example, and there is only one channel
         codes = codes.transpose(1, 0).reshape(-1) # tokens in sample order, each sample has all codebook tokens next to each other
+        codes = torch.cat([codes, torch.tensor([TOK_EOS])], 0)
         return codes
 
     def add_codes(example):
@@ -52,29 +57,19 @@ def tokenize_speech(cfg, ds, concat_shards=True):
 
     ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
 
-    # https://huggingface.co/docs/transformers/main/model_doc/canine#caninetokenizer
-    tokenizer = CanineTokenizer.from_pretrained("google/canine-c")
+    tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
 
-    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True)
-
+    # Process dataset in shards as there appears to be a memory leak
     dss = []
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
-        # print("Fingerprint_s", i, ds_s._fingerprint, Hasher.hash(processor), Hasher.hash(model))
         ds_s = ds_s.map(add_secs, num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_codes, num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
-        # print("Fingerprint", i, ds_s._fingerprint)
-        if i==0:
-            # print("SHP", len(ds_s[0]["labels"]))
-            # print(ds_s[0])
-            sds_s = ds_s.select_columns(["input_ids", "labels"])
-            batch = data_collator([sds_s[i] for i in range(1, 3)])
-            # print(batch)
         dss.append(ds_s)
 
     if concat_shards:
-        return concatenate_datasets(concat_shards)
+        return concatenate_datasets(dss)
     else:
         return dss
 
