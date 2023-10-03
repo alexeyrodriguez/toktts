@@ -30,18 +30,13 @@ if __name__=='__main__':
 
     args = Seq2SeqTrainingArguments(
         f"Something",
-        evaluation_strategy="no",
-        save_strategy="epoch",
-        save_total_limit=3,
         predict_with_generate=True,
-        fp16=False, # True,
-        push_to_hub=False,
         **cfg.training.args.__dict__,
     )
 
+    # Generate validation predictions
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True)
-
     trainer = Seq2SeqTrainer(
         model,
         args,
@@ -50,14 +45,11 @@ if __name__=='__main__':
         data_collator=data_collator,
         compute_metrics=trainer.compute_metrics,
     )
-
-
-    decoder, sampling_rate = prepare_data.make_token_decoder()
-
-    os.makedirs(f"samples/{cfg.model.name}", exist_ok=True)
-
     res = trainer.predict(ds["validation"], max_length=cfg.model.decoder.seq_length+1)
 
+    # Decode predictions to audio and save
+    os.makedirs(f"samples/{cfg.model.name}", exist_ok=True)
+    decoder, sampling_rate = prepare_data.make_token_decoder()
     for ix, ex in enumerate(ds["validation"]):
         prediction = res.predictions[ix]
         # prediction = [1024] + ex['labels'][:-1] # testing

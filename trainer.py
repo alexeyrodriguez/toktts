@@ -53,12 +53,7 @@ if __name__=='__main__':
 
     args = Seq2SeqTrainingArguments(
         f"Something",
-        evaluation_strategy="no",
-        save_strategy="epoch",
-        save_total_limit=3,
         predict_with_generate=True,
-        fp16=False, # True,
-        push_to_hub=False,
         **cfg.training.args.__dict__,
     )
 
