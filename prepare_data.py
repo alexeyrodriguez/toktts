@@ -6,12 +6,48 @@ import torch
 import os
 from transformers import CanineTokenizer, AutoTokenizer
 from datasets.fingerprint import Hasher
+import numpy as np
 
 from transformers import DataCollatorWithPadding, DataCollatorForSeq2Seq
 
 TOK_TOKS = 1024
 TOK_BOS = 1024
 TOK_EOS = 1025
+
+def flatten_audio_tokens(codes):
+    'Takes a token array of shape (codebook, tokens) and flattens it'
+    codes = codes.transpose(1, 0).reshape(-1) # tokens in sample order, each sample has all codebook tokens next to each other
+    codes = torch.cat([codes, torch.tensor([TOK_EOS])], 0) # Add end of sentence token
+    return codes
+
+def unflatten_audio_tokens(codes):
+    '''
+    Remove BOS and EOS tokens and restore codebook dimension.
+    It might drop samples to match number of codebooks
+    Tokens are passed in as a list
+    '''
+    codes = codes[1:]
+    if TOK_EOS in codes:
+        codes = codes[:codes.index(TOK_EOS)]
+
+    # massage tokens back into place
+    num_toks = len(codes) // 2
+    codes = codes[:num_toks*2] # drop tokens if prediction inserted eos in the wrong place
+    codes = np.array(codes).reshape(num_toks, 2).transpose(1, 0)
+    return codes.reshape(2, num_toks)
+
+def make_token_decoder():
+    model = EncodecModel.from_pretrained("facebook/encodec_24khz")
+    processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
+
+    def decode(toks):
+        toks = unflatten_audio_tokens(toks)
+        toks = torch.tensor(toks).view(1, 1, 2, -1)
+        audio_values = model.decode(toks, [None])[0]
+        return audio_values[0, 0].detach()
+
+    return decode, processor.sampling_rate
+
 
 def tokenize_speech(cfg, ds, concat_shards=True):
     """
@@ -35,9 +71,7 @@ def tokenize_speech(cfg, ds, concat_shards=True):
         encoder_outputs = model.encode(audio["input_values"][:, :, :upper_ix], audio["padding_mask"][:, :upper_ix])
         codes = encoder_outputs["audio_codes"] # shape (#examples, channels, codebook, tokens)
         codes = codes[0, 0] # select the only example, and there is only one channel
-        codes = codes.transpose(1, 0).reshape(-1) # tokens in sample order, each sample has all codebook tokens next to each other
-        codes = torch.cat([codes, torch.tensor([TOK_EOS])], 0)
-        return codes
+        return flatten_audio_tokens(codes)
 
     def add_codes(example):
         codes = to_tokens(example["audio"]["array"])

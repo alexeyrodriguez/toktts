@@ -9,6 +9,12 @@ from transformers import Seq2SeqTrainer
 from transformers import DataCollatorForSeq2Seq
 from transformers import EncoderDecoderConfig, EncoderDecoderModel, AutoTokenizer, AutoConfig
 
+def compute_metrics(eval_preds):
+    preds, labels = eval_preds
+    if isinstance(preds, tuple):
+        preds = preds[0]
+    acc = np.mean(np.sum((preds==labels) & (labels!=-100), axis=-1) / np.sum(labels != -100, axis=-1))
+    return {"acc": acc}
 
 if __name__=='__main__':
     print("Starting training")
@@ -31,7 +37,7 @@ if __name__=='__main__':
     )
     dec_config = AutoConfig.from_pretrained(
         "gpt2",
-        vocab_size=1024,
+        vocab_size=prepare_data.TOK_TOKS,
         n_ctx=302,
         bos_token_id=prepare_data.TOK_BOS,
         eos_token_id=prepare_data.TOK_EOS,
@@ -58,15 +64,6 @@ if __name__=='__main__':
 
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True)
 
-    def compute_metrics(eval_preds):
-        preds, labels = eval_preds
-        print(preds.shape, labels.shape) # (80, 512)
-        if isinstance(preds, tuple):
-            preds = preds[0]
-
-        acc = np.mean(np.sum((preds==labels) & (labels!=-100), axis=-1) / np.sum(labels != -100, axis=-1))
-        return {"acc": acc}
-
     trainer = Seq2SeqTrainer(
         model,
         args,
@@ -82,4 +79,3 @@ if __name__=='__main__':
     trainer.save_model(pconfig.model_path(cfg.model.name, None))
 
     print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
-
