@@ -26,6 +26,9 @@ if __name__=='__main__':
     cfg = pconfig.load_config(args.config)
     print(cfg)
 
+    torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
+    ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
+
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
     enc_config = AutoConfig.from_pretrained(
         "gpt2",
@@ -37,7 +40,7 @@ if __name__=='__main__':
     )
     dec_config = AutoConfig.from_pretrained(
         "gpt2",
-        vocab_size=prepare_data.TOK_TOKS,
+        vocab_size=prepare_data.TOK_TOKS+2,
         n_ctx=302,
         bos_token_id=prepare_data.TOK_BOS,
         eos_token_id=prepare_data.TOK_EOS,
@@ -48,12 +51,9 @@ if __name__=='__main__':
     model.config.decoder_start_token_id = prepare_data.TOK_BOS
     model.config.pad_token_id = prepare_data.TOK_EOS
 
-    torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
-    ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
-
     args = Seq2SeqTrainingArguments(
         f"Something",
-        predict_with_generate=True,
+        # predict_with_generate=True,
         **cfg.training.args.__dict__,
     )
 
@@ -65,10 +65,10 @@ if __name__=='__main__':
         train_dataset=ds["train"],
         eval_dataset=ds["validation"],
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        # compute_metrics=compute_metrics,
     )
 
-    print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
+    # print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
 
     trainer.train()
     trainer.save_model(pconfig.model_path(cfg.model.name, None))

@@ -1,5 +1,5 @@
 prepare_data:
-  clip_audio_secs: 4
+  clip_audio_secs: 2
   in_op_threads: true
   limit_rows: 100
   shards: 4
@@ -20,7 +20,7 @@ model:
     n_head: 6
     n_embd: 384
     attn_pdrop: 0.2
-    seq_length: 600 # 4 * 75 * 2
+    seq_length: 300 # 2 * 75 * 2
 
 training:
   args:
