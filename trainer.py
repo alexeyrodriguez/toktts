@@ -49,7 +49,7 @@ if __name__=='__main__':
     model.config.pad_token_id = prepare_data.TOK_EOS
 
     torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
-    ds = prepare_data.lj_speech_dataset(cfg)
+    ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
 
     args = Seq2SeqTrainingArguments(
         f"Something",

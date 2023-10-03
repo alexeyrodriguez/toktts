@@ -85,10 +85,6 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     def add_toks(example):
         return tokenizer(example["normalized_text"])
 
-    if cfg.limit_rows:
-        n_rows = min(cfg.limit_rows, len(ds))
-        ds = ds.select(range(n_rows))
-
     ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
 
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
@@ -109,8 +105,13 @@ def tokenize_speech(cfg, ds, concat_shards=True):
 
 def lj_speech_dataset(cfg):
     ds = load_dataset("lj_speech", split="train")
-    ds = tokenize_speech(cfg.prepare_data, ds)
-    ds = ds.train_test_split(train_size=0.9, seed=20)
+
+    if cfg.limit_rows:
+        n_rows = min(cfg.limit_rows, len(ds))
+        ds = ds.select(range(n_rows))
+
+    ds = tokenize_speech(cfg, ds)
+    ds = ds.train_test_split(train_size=cfg.split_train_size, seed=cfg.split_seed)
     ds["validation"] = ds.pop("test")
     return ds
 

@@ -25,7 +25,7 @@ if __name__=='__main__':
     print(cfg)
 
     torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
-    ds = prepare_data.lj_speech_dataset(cfg)
+    ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
     model = EncoderDecoderModel.from_pretrained(pconfig.model_path(cfg.model.name, None))
 
     args = Seq2SeqTrainingArguments(

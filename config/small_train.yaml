@@ -5,6 +5,8 @@ prepare_data:
   shards: 4
   map_workers: 2
   prepared_data: small_data
+  split_train_size: 0.9
+  split_seed: 20
 
 model:
   name: small_train.model
