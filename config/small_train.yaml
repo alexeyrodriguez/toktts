@@ -19,3 +19,12 @@ model:
     n_embd: 384
     attn_pdrop: 0.2
     seq_length: 600 # 4 * 75 * 2
+
+training:
+  args:
+    per_device_train_batch_size: 8
+    per_device_eval_batch_size: 4
+    eval_accumulation_steps: 4
+    num_train_epochs: 10
+    weight_decay: 0.01
+    learning_rate: 2.0e-5

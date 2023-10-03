@@ -73,7 +73,12 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     else:
         return dss
 
-
+def lj_speech_dataset(cfg):
+    ds = load_dataset("lj_speech", split="train")
+    ds = tokenize_speech(cfg.prepare_data, ds)
+    ds = ds.train_test_split(train_size=0.9, seed=20)
+    ds["validation"] = ds.pop("test")
+    return ds
 
 if __name__=='__main__':
     print("Starting prepare data")
