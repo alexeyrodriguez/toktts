@@ -38,4 +38,10 @@ def dict_to_namespace(d):
     else:
         return d
 
+def model_path(path_from_config, path_from_args):
+    if not path_from_args:
+        return 'model/' + path_from_config
+    else:
+        return path_from_args
+
 #load_config(['config/small_train.yaml', 'config/cloud_cpu.yaml'])

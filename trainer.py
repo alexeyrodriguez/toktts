@@ -53,8 +53,8 @@ if __name__=='__main__':
         save_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        # eval_accumulation_steps=4, # Ok only to move from GPU to CPU
+        per_device_eval_batch_size=4,
+        eval_accumulation_steps=4, # Ok only to move from GPU to CPU
         weight_decay=0.01,
         save_total_limit=3,
         num_train_epochs=10,
@@ -71,7 +71,7 @@ if __name__=='__main__':
 
     def compute_metrics(eval_preds):
         preds, labels = eval_preds
-        # print(preds.shape, labels.shape) # (80, 512)
+        print(preds.shape, labels.shape) # (80, 512)
         # print(preds[:4, :10], '\n')
         # print(labels[:4, :10])
         # In case the model returns more than the prediction logits
@@ -82,7 +82,9 @@ if __name__=='__main__':
         # print((labels != -100)[:8, :20], '\n')
         # print(labels[0, :100])
         # print(np.sum(preds==labels, axis=-1), np.sum(labels != -100, axis=-1))
-        acc = np.mean(np.sum(preds==labels, axis=-1) / np.sum(labels != -100, axis=-1))
+        # acc = np.mean(np.sum(preds==labels, axis=-1) / np.sum(labels != -100, axis=-1))
+
+        acc = np.mean(np.sum((preds==labels) & (labels!=-100), axis=-1) / np.sum(labels != -100, axis=-1))
 
         return {"acc": acc}
 
@@ -96,8 +98,10 @@ if __name__=='__main__':
         compute_metrics=compute_metrics,
     )
 
-    print(trainer.evaluate(max_length=300))
+    print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
 
     trainer.train()
+    trainer.save_model(pconfig.model_path(cfg.model.name, None))
 
-    print(trainer.evaluate(max_length=300))
+    print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
+

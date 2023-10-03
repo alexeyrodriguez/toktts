@@ -5,3 +5,17 @@ prepare_data:
   shards: 4
   map_workers: 2
   prepared_data: small_data
+
+model:
+  name: small_train.model
+  encoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    attn_pdrop: 0.2
+  decoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    attn_pdrop: 0.2
+    seq_length: 600 # 4 * 75 * 2
