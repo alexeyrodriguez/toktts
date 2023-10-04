@@ -30,7 +30,7 @@ training:
     evaluation_strategy: steps
     num_train_epochs: 10
     weight_decay: 0.01
-    learning_rate: 2.0e-3
+    learning_rate: 2.0e-4
     save_strategy: epoch
     save_total_limit: 3
     logging_steps: 200
