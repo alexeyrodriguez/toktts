@@ -45,6 +45,8 @@ if __name__=='__main__':
         data_collator=data_collator,
         compute_metrics=trainer.compute_metrics,
     )
+
+    print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
     res = trainer.predict(ds["validation"], max_length=cfg.model.decoder.seq_length+1)
 
     # Decode predictions to audio and save
