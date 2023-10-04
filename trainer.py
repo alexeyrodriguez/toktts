@@ -9,6 +9,8 @@ from transformers import Seq2SeqTrainer
 from transformers import DataCollatorForSeq2Seq
 from transformers import EncoderDecoderConfig, EncoderDecoderModel, AutoTokenizer, AutoConfig
 
+import wandb
+
 def compute_metrics(eval_preds):
     preds, labels = eval_preds
     if isinstance(preds, tuple):
@@ -20,11 +22,17 @@ if __name__=='__main__':
     print("Starting training")
 
     parser = argparse.ArgumentParser(description='Training script.')
-    parser.add_argument('--config', action = 'store', type = str, help = 'Configuration', required=True)
+    parser.add_argument('--config', action = 'append', type = str, help = 'Configuration', required=True)
     args = parser.parse_args()
-
     cfg = pconfig.load_config(args.config)
-    print(cfg)
+
+    if hasattr(cfg, "wandb"):
+        wandb.login(key=cfg.wandb.api_key)
+        wandb.init(entity=cfg.wandb.entity, project=cfg.wandb.project)
+        wandb.config.update({"pconfig": pconfig.namespace_to_dict(cfg)})
+        report_to = "wandb"
+    else:
+        report_to = "none"
 
     torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
     ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
@@ -53,6 +61,7 @@ if __name__=='__main__':
 
     args = Seq2SeqTrainingArguments(
         f"Something",
+        report_to=report_to,
         # predict_with_generate=True,
         **cfg.training.args.__dict__,
     )
@@ -67,8 +76,6 @@ if __name__=='__main__':
         data_collator=data_collator,
         # compute_metrics=compute_metrics,
     )
-
-    # print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
 
     trainer.train()
     trainer.save_model(pconfig.model_path(cfg.model.name, None))

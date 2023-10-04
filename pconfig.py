@@ -38,6 +38,14 @@ def dict_to_namespace(d):
     else:
         return d
 
+def namespace_to_dict(ns):
+    from types import SimpleNamespace
+    if isinstance(ns, SimpleNamespace):
+        d = ns.__dict__
+        return {k: namespace_to_dict(d[k]) for k in d.keys()}
+    else:
+        return ns
+
 def model_path(path_from_config, path_from_args):
     if not path_from_args:
         return 'models/' + path_from_config
