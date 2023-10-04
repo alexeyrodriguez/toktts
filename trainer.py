@@ -60,7 +60,7 @@ if __name__=='__main__':
     model.config.pad_token_id = prepare_data.TOK_EOS
 
     args = Seq2SeqTrainingArguments(
-        f"Something",
+        pconfig.model_path(cfg.model.name, None),
         report_to=report_to,
         # predict_with_generate=True,
         **cfg.training.args.__dict__,
