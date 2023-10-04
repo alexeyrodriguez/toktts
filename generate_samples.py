@@ -32,6 +32,7 @@ if __name__=='__main__':
         f"Something",
         predict_with_generate=True,
         **cfg.training.args.__dict__,
+        report_to = "none",
     )
 
     # Generate validation predictions
@@ -47,7 +48,7 @@ if __name__=='__main__':
     )
 
     print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
-    res = trainer.predict(ds["validation"], max_length=cfg.model.decoder.seq_length+1)
+    res = trainer.predict(ds["validation"], max_length=cfg.model.decoder.seq_length+1, num_beams=4, do_sample=True)
 
     # Decode predictions to audio and save
     os.makedirs(f"samples/{cfg.model.name}", exist_ok=True)
