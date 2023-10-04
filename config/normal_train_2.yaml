@@ -1,0 +1,37 @@
+prepare_data:
+  clip_audio_secs: 2
+  in_op_threads: false
+  limit_rows:
+  shards: 20
+  map_workers: 4
+  prepared_data: normal_data
+  split_train_size: 0.95
+  split_seed: 20
+
+model:
+  name: normal_train.model
+  encoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    attn_pdrop: 0.2
+  decoder:
+    n_layer: 8
+    n_head: 8
+    n_embd: 512
+    attn_pdrop: 0.2
+    seq_length: 300 # 2 * 75 * 2
+
+training:
+  args:
+    per_device_train_batch_size: 8
+    per_device_eval_batch_size: 64
+    eval_accumulation_steps: 4
+    evaluation_strategy: steps
+    num_train_epochs: 20
+    weight_decay: 0.01
+    learning_rate: 2.0e-5
+    save_strategy: epoch
+    save_total_limit: 3
+    logging_steps: 200
+    warmup_steps: 100
