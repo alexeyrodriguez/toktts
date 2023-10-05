@@ -35,3 +35,6 @@ training:
     save_total_limit: 3
     logging_steps: 200
     warmup_steps: 100
+
+generate_samples:
+  limit_rows: 10

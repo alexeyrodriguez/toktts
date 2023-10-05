@@ -34,3 +34,6 @@ training:
     fp16: false
     save_strategy: epoch
     save_total_limit: 3
+
+generate_samples:
+  limit_rows: 1
