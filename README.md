@@ -4,4 +4,6 @@ An exploration of creating a text to speech model that uses a sequence to sequen
 architecture with an encoding transformer model and decoding transformer model with cross attention.
 
 Audio is converted into tokens using Meta's Encodec. At the moment due to limited time
-and money budget this only works with the very first seconds of audio and it is WIP.
+and money budget this only works with the very first seconds of audio.
+
+This is work in progress and the artchitecture search and hyperparameters is ongoing.
