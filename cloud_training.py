@@ -4,15 +4,14 @@ import subprocess
 import os
 
 
-parser = argparse.ArgumentParser(description='Training script.')
+parser = argparse.ArgumentParser(description='Training script. Example cloud_training.py --cloud-config x.yaml -- --config train.yaml')
 parser.add_argument('--cloud-config', action = 'store', type = str, help = 'Cloud configuration', required=True)
 parser.add_argument('--detach', action='store_true', help = 'Let execution continue even after disconnection')
 parser.add_argument('--power-off', action='store_true', help = 'Switch off node after training')
+parser.add_argument('extraargs', nargs='*')
 
 args = parser.parse_args()
 cfg = pconfig.load_config(args.cloud_config).gcloud
-print(cfg)
-print('JEJE', cfg.instance.creation_args)
 
 def gcloud(args, check=True, fake=False):
     print('  Running: '+ ' '.join([cfg.path] + args))
@@ -32,19 +31,13 @@ def gcloud_create_instance(instance_name, creation_args):
     args = [f'--{k}={creation_args[k]}' for k in creation_args]
     return gcloud(['compute', 'instances', 'create', instance_name]+args)
 
-# REMOTE_RUNNER = 'scripts/run_remote_training.sh'
-REMOTE_RUNNER = 'prepare_data.py'
+REMOTE_RUNNER = 'scripts/run_remote_training.sh'
 
-def gcloud_remote_training(args, instance_name,
-        git_repo_url, git_branch, gcs_model_path,
-        wandb_api_key=None, wandb_entity=None, extra_args=[]):
+def gcloud_remote_training(args, instance_name, gcs_model_path="unused", extra_args=[]):
     power_off_arg = 'yes' if args.power_off else 'no'
     command = [
-        'bash', os.path.basename(REMOTE_RUNNER), git_repo_url, git_branch, gcs_model_path, power_off_arg
+        'bash', "toktts/" + REMOTE_RUNNER, gcs_model_path, power_off_arg
     ]
-    command.extend(['--experiment', args.experiment])
-    if wandb_api_key:
-        command.extend(['--wandb-api-key', wandb_api_key, '--wandb-entity', wandb_entity])
     command.extend(extra_args)
     command = ' '.join(command)
     if args.detach:
@@ -64,7 +57,9 @@ if __name__=='__main__':
     else:
         print(f'Using instance: {instance_name}')
 
-        print('Copying remote running script')
-        gcloud(['compute', 'scp', REMOTE_RUNNER, f'{instance_name}:'])
-
-        gcloud_remote_training(args, instance_name)
+        print('Copying repository')
+        import glob
+        repo_files = ['requirements.txt', *glob.glob('*.py'), 'config', 'scripts']
+        gcloud(['compute', 'ssh', '--command=mkdir -p toktts', instance_name])
+        gcloud(['compute', 'scp', '--recurse', *repo_files, f'{instance_name}:toktts'])
+        gcloud_remote_training(args, instance_name, extra_args=args.extraargs)
