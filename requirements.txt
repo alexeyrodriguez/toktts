@@ -1,6 +1,8 @@
+# todo: pin versions
+
 accelerate
 datasets
-transformers @ git+https://github.com/huggingface/transformers.git@main
+transformers @ git+https://github.com/huggingface/transformers.git@19f0b7d
 librosa
 soundfile
 wandb
