@@ -3,7 +3,7 @@ prepare_data:
   in_op_threads: false
   limit_rows:
   shards: 20
-  map_workers: 4
+  map_workers: 8
   prepared_data: normal_data
   split_train_size: 0.95
   split_seed: 20
@@ -35,3 +35,6 @@ training:
     save_total_limit: 3
     logging_steps: 200
     warmup_steps: 100
+
+generate_samples:
+  limit_rows: 10
