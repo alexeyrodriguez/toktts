@@ -1,0 +1,14 @@
+gcloud:
+  path: /path-to-google-cloud-sdk/google-cloud-sdk/bin/gcloud # PLEASE MODIFY (maybe worth removing)
+
+  instance:
+    name: trainer-gpu
+    creation_args:
+      image: 'https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/pytorch-latest-cpu-v20230822-debian-11-py310'
+      machine-type: n1-standard-8
+      boot-disk-size: 250GB
+      maintenance-policy: TERMINATE
+      scopes: storage-rw # Needed to copy the model to gcs
+      accelerator: 'type=nvidia-tesla-t4,count=1'
+      metadata: 'install-nvidia-driver=True'
+

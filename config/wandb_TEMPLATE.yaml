@@ -1,0 +1,4 @@
+wandb:
+  api_key: # YOUR API KEY
+  entity: # YOUR ENTITY
+  project: # YOUR PROJECT
