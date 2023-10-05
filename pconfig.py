@@ -1,12 +1,18 @@
 import yaml
 
-def load_config(paths):
+def load_config(paths, inline_configs=None):
+    '''
+    Parse configuration files provided in paths and inline yaml content in inline_configs
+    The returned dictionaries are merged such dictionaries override keys earlier in the list
+    The resulting configuration is returned as a namespace
+    '''
     paths = paths if isinstance(paths, list) else [paths]
     cs = []
     for p in paths:
         with open(p, 'r') as f:
             d = yaml.safe_load(f)
             cs.append(d)
+    cs.extend([yaml.safe_load(c) for c in inline_configs]) if inline_configs else cs
     return dict_to_namespace(merge_dicts(cs))
 
 def merge_dicts(dicts):

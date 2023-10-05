@@ -35,14 +35,15 @@ def generate_samples(trainer, cfg, ds, subdir="validation"):
         sf.write(f_name + ".wav", audio_values, sampling_rate)
 
 if __name__=='__main__':
-    print("Starting training")
+    print("Starting sample generation")
 
     parser = argparse.ArgumentParser(description='Training script.')
     parser.add_argument('--config', action = 'store', type = str, help = 'Configuration', required=True)
     parser.add_argument('--text', action = 'store', type = str, help = 'Text to speak')
+    parser.add_argument('--yconfig', action = 'append', type = str, help = 'Inline yaml config, useful for config overriding')
     args = parser.parse_args()
 
-    cfg = pconfig.load_config(args.config)
+    cfg = pconfig.load_config(args.config, args.yconfig)
 
     model = EncoderDecoderModel.from_pretrained(pconfig.model_path(cfg.model.name, None))
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")

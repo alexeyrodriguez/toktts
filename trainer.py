@@ -47,9 +47,10 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser(description='Training script.')
     parser.add_argument('--config', action = 'append', type = str, help = 'Configuration', required=True)
+    parser.add_argument('--yconfig', action = 'append', type = str, help = 'Inline yaml config, useful for config overriding')
     parser.add_argument('--with-model', action = 'store', type = str, help = 'Pretrained model')
     args = parser.parse_args()
-    cfg = pconfig.load_config(args.config)
+    cfg = pconfig.load_config(args.config, args.yconfig)
 
     if hasattr(cfg, "wandb"):
         wandb.login(key=cfg.wandb.api_key)
