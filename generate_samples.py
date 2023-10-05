@@ -38,7 +38,7 @@ if __name__=='__main__':
     print("Starting sample generation")
 
     parser = argparse.ArgumentParser(description='Training script.')
-    parser.add_argument('--config', action = 'store', type = str, help = 'Configuration', required=True)
+    parser.add_argument('--config', action = 'append', type = str, help = 'Configuration', required=True)
     parser.add_argument('--text', action = 'store', type = str, help = 'Text to speak')
     parser.add_argument('--yconfig', action = 'append', type = str, help = 'Inline yaml config, useful for config overriding')
     args = parser.parse_args()
