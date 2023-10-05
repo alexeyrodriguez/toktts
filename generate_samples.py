@@ -81,6 +81,7 @@ if __name__=='__main__':
 
     else:
         # todo: Refactor the below into a function that goes into prepare_data
+        #   also the text normalization should happen in prepare_data rather than used from the dataset
 
         id = "".join([c for c in args.text if c.isalpha()][:20])
         id = "test" if not id else id
