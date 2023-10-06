@@ -85,6 +85,13 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     def add_toks(example):
         return tokenizer(example["normalized_text"])
 
+    def process_data(example):
+        d = {}
+        d.update(add_secs(example))
+        d.update(add_codes(example))
+        d.update(add_toks(example))
+        return d
+
     ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
 
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
@@ -93,9 +100,7 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     dss = []
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
-        ds_s = ds_s.map(add_secs, num_proc=cfg.map_workers)
-        ds_s = ds_s.map(add_codes, num_proc=cfg.map_workers)
-        ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
+        ds_s = ds_s.map(process_data, num_proc=cfg.map_workers)
         dss.append(ds_s)
 
     if concat_shards:
