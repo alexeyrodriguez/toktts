@@ -29,10 +29,13 @@ def generate_samples(trainer, cfg, ds, subdir="validation"):
         with open(f_name + ".txt", "w") as f:
             f.write(ex["normalized_text"])
 
-        prediction = res.predictions[ix]
-        # prediction = [1024] + ex['labels'][:-1] # testing
+        prediction = list(res.predictions[ix])
         audio_values = decoder(prediction)
         sf.write(f_name + ".wav", audio_values, sampling_rate)
+
+        prediction = [1024] + ex['labels'][:-1] # testing
+        audio_values = decoder(prediction)
+        sf.write(f_name + "_ref.wav", audio_values, sampling_rate)
 
 if __name__=='__main__':
     print("Starting sample generation")
