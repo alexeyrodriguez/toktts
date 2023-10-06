@@ -67,6 +67,7 @@ if __name__=='__main__':
         model = make_model(cfg)
     else:
         model = EncoderDecoderModel.from_pretrained(args.with_model)
+    print("Number of parameters in model:", model.num_parameters())
 
     args = Seq2SeqTrainingArguments(
         pconfig.model_path(cfg.model.name, None),
