@@ -89,7 +89,6 @@ def tokenize_speech(cfg, ds, concat_shards=True):
         d = {}
         d.update(add_secs(example))
         d.update(add_codes(example))
-        d.update(add_toks(example))
         return d
 
     ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
@@ -101,6 +100,8 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
         ds_s = ds_s.map(process_data, num_proc=cfg.map_workers)
+        # split this one out because there is some underterministic state in the tokenizer apparently
+        ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
         dss.append(ds_s)
 
     if concat_shards:
