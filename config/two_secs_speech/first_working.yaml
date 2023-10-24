@@ -9,7 +9,7 @@ prepare_data:
   split_seed: 20
 
 model:
-  name: first_working.model
+  name: first_working.model # first-success-37 on wandb
   encoder:
     n_layer: 4
     n_head: 4
