@@ -28,9 +28,13 @@ training:
     per_device_eval_batch_size: 4
     eval_accumulation_steps: 4
     # evaluation_strategy: epoch
-    num_train_epochs: 1
+    num_train_epochs: 10
     weight_decay: 0.01
     learning_rate: 2.0e-5
+    # min_learning_rate: 2.0e-6
+    # lr_decay_steps: 60
+    # lr_scheduler_type: 'cosine'
+    # logging_steps: 1
     fp16: false
     save_strategy: epoch
     save_total_limit: 3
