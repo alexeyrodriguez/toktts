@@ -52,9 +52,9 @@ def get_schedule_with_warmup(optimizer, name, num_warmup_steps, lr_decay_steps, 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
 
 class CustomTrainer(Seq2SeqTrainer):
-    def log(self, logs):
-        logs["learning_rate"] = self._get_learning_rate()
-        super().log(logs)
+    # def log(self, logs):
+    #     logs["learning_rate"] = self._get_learning_rate()
+    #     super().log(logs)
 
     def create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
         name = SchedulerType(self.args.lr_scheduler_type)

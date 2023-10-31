@@ -56,7 +56,7 @@ if __name__=='__main__':
         torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
         ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
 
-        args = Seq2SeqTrainingArguments(
+        args = trainer.CustomTrainingArguments(
             f"Something",
             predict_with_generate=True,
             **cfg.training.args.__dict__,
@@ -64,7 +64,7 @@ if __name__=='__main__':
         )
 
         # Generate validation predictions
-        trainer = Seq2SeqTrainer(
+        trainer = trainer.CustomTrainer(
             model,
             args,
             train_dataset=ds["train"],
