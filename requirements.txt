@@ -1,7 +1,7 @@
 # todo: pin versions
 
-accelerate
-datasets
+accelerate==0.23.0
+datasets==2.14.5
 transformers @ git+https://github.com/huggingface/transformers.git@19f0b7d
 librosa
 soundfile
