@@ -126,9 +126,9 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     dss = []
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
-        ds_s = map_list(ds_s, add_codes, "labels", num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_secs, num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
+        ds_s = map_list(ds_s, add_codes, "labels", num_proc=cfg.map_workers)
         dss.append(ds_s)
 
     if concat_shards:
