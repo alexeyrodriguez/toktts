@@ -67,8 +67,8 @@ class CustomTrainer(Seq2SeqTrainer):
                 optimizer=self.optimizer if optimizer is None else optimizer,
                 name=name,
                 num_warmup_steps=self.args.get_warmup_steps(num_training_steps),
-                lr_decay_steps=num_training_steps if not args.lr_decay_steps else args.lr_decay_steps,
-                min_factor=args.min_learning_rate/args.learning_rate,
+                lr_decay_steps=num_training_steps if not self.args.lr_decay_steps else self.args.lr_decay_steps,
+                min_factor=self.args.min_learning_rate/self.args.learning_rate,
             )
         self._created_lr_scheduler = True
         return self.lr_scheduler
@@ -111,6 +111,7 @@ if __name__=='__main__':
     parser.add_argument('--config', action = 'append', type = str, help = 'Configuration', required=True)
     parser.add_argument('--yconfig', action = 'append', type = str, help = 'Inline yaml config, useful for config overriding')
     parser.add_argument('--with-model', action = 'store', type = str, help = 'Pretrained model')
+    parser.add_argument('--with-checkpoint', action = 'store', type = str, help = 'Start from checkpoint')
     args = parser.parse_args()
     cfg = pconfig.load_config(args.config, args.yconfig)
 
@@ -125,16 +126,18 @@ if __name__=='__main__':
     torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
     ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
 
-    if not args.with_model:
-        model = make_model(cfg)
-    else:
+    if args.with_model:
         model = EncoderDecoderModel.from_pretrained(args.with_model)
+    elif args.with_checkpoint:
+        model = EncoderDecoderModel.from_pretrained(args.with_checkpoint)
+    else:
+        model = make_model(cfg)
+
     print("Number of parameters in model:", model.num_parameters())
 
-    args = CustomTrainingArguments(
+    targs = CustomTrainingArguments(
         pconfig.model_path(cfg.model.name, None),
         report_to=report_to,
-        # predict_with_generate=True,
         **cfg.training.args.__dict__,
     )
 
@@ -143,13 +146,17 @@ if __name__=='__main__':
 
     trainer = CustomTrainer(
         model,
-        args,
+        targs,
         train_dataset=ds["train"],
         eval_dataset=ds["validation"],
         data_collator=data_collator,
     )
 
-    trainer.train()
+    if not args.with_checkpoint:
+        trainer.train()
+    else:
+        trainer.train(args.with_checkpoint)
+
     trainer.save_model(pconfig.model_path(cfg.model.name, None))
 
     print(trainer.evaluate(max_length=cfg.model.decoder.seq_length+1))
