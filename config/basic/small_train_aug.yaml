@@ -1,0 +1,45 @@
+prepare_data:
+  clip_audio_secs: 2
+  in_op_threads: true
+  limit_rows: 100
+  shards: 4
+  map_workers: 2
+  prepared_data: small_data
+  split_train_size: 0.9
+  split_seed: 20
+  augmentation_factor: 2
+  augmentation_noise: 6.0e-4
+
+model:
+  name: small_train.model
+  encoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    attn_pdrop: 0.2
+  decoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    attn_pdrop: 0.2
+    seq_length: 300 # 2 * 75 * 2
+
+training:
+  args:
+    per_device_train_batch_size: 8
+    per_device_eval_batch_size: 4
+    eval_accumulation_steps: 4
+    # evaluation_strategy: epoch
+    num_train_epochs: 10
+    weight_decay: 0.01
+    learning_rate: 2.0e-5
+    # min_learning_rate: 2.0e-6
+    # lr_decay_steps: 60
+    # lr_scheduler_type: 'cosine'
+    # logging_steps: 1
+    fp16: false
+    save_strategy: epoch
+    save_total_limit: 3
+
+generate_samples:
+  limit_rows: 1

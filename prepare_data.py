@@ -59,6 +59,18 @@ def make_token_decoder():
 
     return decode, processor.sampling_rate
 
+def map_list(ds, f, col, num_proc=None):
+    """
+    Adds a column `col` to a dataset where rows may be duplicated if `f` returns multiple values
+    Easier to use than the low level batching interface
+    Possibly this introduces a lot of overhead, so only use when the function is expensive. Todo, optimize?
+    """
+    def map_fn(batch):
+        vals = f({ k: v[0] for k, v in batch.items() })
+        d = { k: [v[0] for _ in vals] for k, v in batch.items() }
+        d.update({ col: vals})
+        return d
+    return ds.map(map_fn, batched=True, batch_size=1, num_proc=num_proc)
 
 def tokenize_speech(cfg, ds, concat_shards=True):
     """
@@ -74,26 +86,31 @@ def tokenize_speech(cfg, ds, concat_shards=True):
         upper_ix = cfg.clip_audio_secs * sr if cfg.clip_audio_secs else audio_raw.shape[-1]
         # Is the below only needed for batching? (which we are not using atm anyway)
         audio = processor(raw_audio=audio_raw[...,:upper_ix], sampling_rate=sr, return_tensors='pt')
-        return audio
+        return audio["input_values"], audio["padding_mask"]
 
-    def to_tokens(audio):
+    def to_tokens(audio, mask):
         '''
         Take an audio channel as a numpy array and encode using the Encodec model which return the tokens.
 
         For the processor documentation:
             https://github.com/huggingface/transformers/blob/main/src/transformers/models/encodec/feature_extraction_encodec.py
         '''
-        encoder_outputs = model.encode(audio["input_values"], audio["padding_mask"])
+        encoder_outputs = model.encode(audio, mask)
         codes = encoder_outputs["audio_codes"] # shape (#examples, channels, codebook, tokens)
         codes = codes[0, 0] # select the only example, and there is only one channel
         return flatten_audio_tokens(codes)
 
     def add_codes(example):
-        audio = prepare_audio(example["audio"]["array"], example["audio"]["sampling_rate"])
-        codes = to_tokens(audio)
-        return {"labels": codes}
-        # Also note that the new column has values of type list rather than tensor despite that
-        # the mapping function is returning tensor values.
+        audio, mask = prepare_audio(example["audio"]["array"], example["audio"]["sampling_rate"])
+
+        res = [to_tokens(audio, mask)]
+
+        if "augmentation_factor" in cfg.__dict__:
+            for _ in range(cfg.augmentation_factor - 1):
+                noise = torch.randn(*audio.shape) * cfg.augmentation_noise
+                res.append(to_tokens(audio+noise, mask))
+
+        return res
 
     def add_secs(example):
         return {"seconds": example["audio"]["array"].shape[-1] / example["audio"]["sampling_rate"] }
@@ -109,7 +126,7 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     dss = []
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
-        ds_s = ds_s.map(add_codes, num_proc=cfg.map_workers)
+        ds_s = map_list(ds_s, add_codes, "labels", num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_secs, num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
         dss.append(ds_s)
