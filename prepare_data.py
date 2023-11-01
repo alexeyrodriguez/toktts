@@ -70,22 +70,27 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     model = EncodecModel.from_pretrained("facebook/encodec_24khz")
     processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
 
-    def to_tokens(audio_raw):
+    def prepare_audio(audio_raw, sr):
+        upper_ix = cfg.clip_audio_secs * sr if cfg.clip_audio_secs else audio_raw.shape[-1]
+        # Is the below only needed for batching? (which we are not using atm anyway)
+        audio = processor(raw_audio=audio_raw[...,:upper_ix], sampling_rate=sr, return_tensors='pt')
+        return audio
+
+    def to_tokens(audio):
         '''
         Take an audio channel as a numpy array and encode using the Encodec model which return the tokens.
 
         For the processor documentation:
             https://github.com/huggingface/transformers/blob/main/src/transformers/models/encodec/feature_extraction_encodec.py
         '''
-        audio = processor(raw_audio=audio_raw, sampling_rate=processor.sampling_rate, return_tensors='pt')
-        upper_ix = cfg.clip_audio_secs * processor.sampling_rate if cfg.clip_audio_secs else audio["input_values"].shape[-1]
-        encoder_outputs = model.encode(audio["input_values"][:, :, :upper_ix], audio["padding_mask"][:, :upper_ix])
+        encoder_outputs = model.encode(audio["input_values"], audio["padding_mask"])
         codes = encoder_outputs["audio_codes"] # shape (#examples, channels, codebook, tokens)
         codes = codes[0, 0] # select the only example, and there is only one channel
         return flatten_audio_tokens(codes)
 
     def add_codes(example):
-        codes = to_tokens(example["audio"]["array"])
+        audio = prepare_audio(example["audio"]["array"], example["audio"]["sampling_rate"])
+        codes = to_tokens(audio)
         return {"labels": codes}
         # Also note that the new column has values of type list rather than tensor despite that
         # the mapping function is returning tensor values.
@@ -96,12 +101,6 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     def add_toks(example):
         return tokenizer(example["normalized_text"])
 
-    def process_data(example):
-        d = {}
-        d.update(add_secs(example))
-        d.update(add_codes(example))
-        return d
-
     ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
 
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
@@ -110,8 +109,8 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     dss = []
     for i in range(cfg.shards):
         ds_s = ds.shard(cfg.shards, i, contiguous=True)
-        ds_s = ds_s.map(process_data, num_proc=cfg.map_workers)
-        # split this one out because there is some underterministic state in the tokenizer apparently
+        ds_s = ds_s.map(add_codes, num_proc=cfg.map_workers)
+        ds_s = ds_s.map(add_secs, num_proc=cfg.map_workers)
         ds_s = ds_s.map(add_toks, num_proc=cfg.map_workers)
         dss.append(ds_s)
 
