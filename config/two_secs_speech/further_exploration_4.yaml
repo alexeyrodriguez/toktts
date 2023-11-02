@@ -1,0 +1,41 @@
+prepare_data:
+  clip_audio_secs: 2
+  in_op_threads: false
+  limit_rows:
+  shards: 1 # only with large mem boxes due to memory leak while audio encoding
+  map_workers: 16
+  prepared_data: normal_data
+  split_train_size: 0.95
+  split_seed: 20
+
+model:
+  name: further_exploration_4.model
+  encoder:
+    n_layer: 4
+    n_head: 4
+    n_embd: 64
+    attn_pdrop: 0.2
+  decoder:
+    n_layer: 6
+    n_head: 6
+    n_embd: 96
+    attn_pdrop: 0.2
+    seq_length: 300 # 2 * 75 * 2
+
+training:
+  args:
+    per_device_train_batch_size: 64
+    per_device_eval_batch_size: 64
+    eval_accumulation_steps: 4
+    evaluation_strategy: steps
+    num_train_epochs: 2560
+    weight_decay: 0.15
+    learning_rate: 2.0e-3
+    save_strategy: epoch
+    save_total_limit: 3
+    logging_steps: 200
+    warmup_steps: 100
+
+generate_samples:
+    limit_rows: 10
+
