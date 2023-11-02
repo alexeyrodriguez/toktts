@@ -147,13 +147,14 @@ def lj_speech_dataset(cfg):
         torch_threads = torch.get_num_threads()
         torch.set_num_threads(1)
 
-    ds = tokenize_speech(cfg, ds)
+    ds = ds.train_test_split(train_size=cfg.split_train_size, seed=cfg.split_seed)
+
+    ds["train"] = tokenize_speech(cfg, ds.pop("train"))
+    ds["validation"] = tokenize_speech(cfg, ds.pop("test"))
 
     if not cfg.in_op_threads:
         torch.set_num_threads(torch_threads)
 
-    ds = ds.train_test_split(train_size=cfg.split_train_size, seed=cfg.split_seed)
-    ds["validation"] = ds.pop("test")
     return ds
 
 if __name__=='__main__':
