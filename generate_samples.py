@@ -11,11 +11,7 @@ from datasets import Dataset
 import pconfig
 import prepare_data
 from training_utils import compute_metrics, CustomTrainer, CustomTrainingArguments
-
-
-def cut_rows(ds, n_rows):
-    n = min(len(ds), n_rows)
-    return ds.select(range(n))
+from dataset_utils import cut_rows
 
 def generate_samples(trainer, cfg, ds, subdir="validation"):
     res = trainer.predict(ds, max_length=cfg.model.decoder.seq_length+1, num_beams=4, do_sample=True)
