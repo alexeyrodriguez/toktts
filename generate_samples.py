@@ -4,15 +4,14 @@ import numpy as np
 import soundfile as sf
 import os
 
-from transformers import Seq2SeqTrainingArguments
-from transformers import Seq2SeqTrainer
 from transformers import DataCollatorForSeq2Seq
-from transformers import EncoderDecoderConfig, EncoderDecoderModel, AutoTokenizer, AutoConfig
+from transformers import EncoderDecoderModel, AutoTokenizer
 from datasets import Dataset
 
 import pconfig
 import prepare_data
-import trainer
+from training_utils import compute_metrics, CustomTrainer, CustomTrainingArguments
+
 
 def cut_rows(ds, n_rows):
     n = min(len(ds), n_rows)
@@ -57,7 +56,7 @@ if __name__=='__main__':
         torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
         ds = prepare_data.lj_speech_dataset(cfg.prepare_data)
 
-        args = trainer.CustomTrainingArguments(
+        args = CustomTrainingArguments(
             f"Something",
             predict_with_generate=True,
             **cfg.training.args.__dict__,
@@ -65,13 +64,13 @@ if __name__=='__main__':
         )
 
         # Generate validation predictions
-        trainer = trainer.CustomTrainer(
+        trainer = CustomTrainer(
             model,
             args,
             train_dataset=ds["train"],
             eval_dataset=ds["validation"],
             data_collator=data_collator,
-            compute_metrics=trainer.compute_metrics,
+            compute_metrics=compute_metrics,
         )
 
 
@@ -97,7 +96,7 @@ if __name__=='__main__':
         ds = ds.map(add_toks)
 
 
-        args = Seq2SeqTrainingArguments(
+        args = CustomTrainingArguments(
             f"Something",
             predict_with_generate=True,
             **cfg.training.args.__dict__,
@@ -105,7 +104,7 @@ if __name__=='__main__':
         )
 
         # Generate validation predictions
-        trainer = Seq2SeqTrainer(
+        trainer = CustomTrainer(
             model,
             args,
             data_collator=data_collator,
