@@ -10,6 +10,7 @@ from datasets import Dataset
 
 import pconfig
 import prepare_data
+import audio_encoding
 from training_utils import compute_metrics, CustomTrainer, CustomTrainingArguments
 from dataset_utils import cut_rows
 
@@ -18,7 +19,7 @@ def generate_samples(trainer, cfg, ds, subdir="validation"):
 
     # Decode predictions to audio and save
     os.makedirs(f"samples/{cfg.model.name}/{subdir}", exist_ok=True)
-    decoder, sampling_rate = prepare_data.make_token_decoder()
+    decoder, sampling_rate = audio_encoding.make_token_decoder()
     for ix, ex in enumerate(ds):
         f_name = f"samples/{cfg.model.name}/{subdir}/{ex['id']}"
         with open(f_name + ".txt", "w") as f:

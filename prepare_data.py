@@ -1,51 +1,13 @@
 import argparse
 import pconfig
 from datasets import load_dataset, Audio, concatenate_datasets
-from transformers import EncodecModel, AutoProcessor
 import torch
 import os
 from transformers import AutoTokenizer
 import numpy as np
 
 from dataset_utils import map_list
-
-TOK_TOKS = 1024
-TOK_BOS = 1024
-TOK_EOS = 1025
-
-def flatten_audio_tokens(codes):
-    'Takes a token array of shape (codebook, tokens) and flattens it'
-    codes = codes.transpose(1, 0).reshape(-1) # tokens in sample order, each sample has all codebook tokens next to each other
-    codes = torch.cat([codes, torch.tensor([TOK_EOS])], 0) # Add end of sentence token
-    return codes
-
-def unflatten_audio_tokens(codes):
-    '''
-    Remove BOS and EOS tokens and restore codebook dimension.
-    It might drop samples to match number of codebooks
-    Tokens are passed in as a list
-    '''
-    codes = codes[1:]
-    if TOK_EOS in codes:
-        codes = codes[:codes.index(TOK_EOS)]
-
-    # massage tokens back into place
-    num_toks = len(codes) // 2
-    codes = codes[:num_toks*2] # drop tokens if prediction inserted eos in the wrong place
-    codes = np.array(codes).reshape(num_toks, 2).transpose(1, 0)
-    return codes.reshape(2, num_toks)
-
-def make_token_decoder():
-    model = EncodecModel.from_pretrained("facebook/encodec_24khz")
-    processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
-
-    def decode(toks):
-        toks = unflatten_audio_tokens(toks)
-        toks = torch.tensor(toks).view(1, 1, 2, -1)
-        audio_values = model.decode(toks, [None])[0]
-        return audio_values[0, 0].detach()
-
-    return decode, processor.sampling_rate
+from audio_encoding import make_token_encoder
 
 def tokenize_speech(cfg, ds, concat_shards=True):
     """
@@ -53,37 +15,19 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     encoder decoder transformer training.
     """
 
-    # load the model + processor (for pre-processing the audio)
-    model = EncodecModel.from_pretrained("facebook/encodec_24khz")
-    processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
-
-    def prepare_audio(audio_raw, sr):
-        upper_ix = cfg.clip_audio_secs * sr if cfg.clip_audio_secs else audio_raw.shape[-1]
-        # Is the below only needed for batching? (which we are not using atm anyway)
-        audio = processor(raw_audio=audio_raw[...,:upper_ix], sampling_rate=sr, return_tensors='pt')
-        return audio["input_values"], audio["padding_mask"]
-
-    def to_tokens(audio, mask):
-        '''
-        Take an audio channel as a numpy array and encode using the Encodec model which return the tokens.
-
-        For the processor documentation:
-            https://github.com/huggingface/transformers/blob/main/src/transformers/models/encodec/feature_extraction_encodec.py
-        '''
-        encoder_outputs = model.encode(audio, mask)
-        codes = encoder_outputs["audio_codes"] # shape (#examples, channels, codebook, tokens)
-        codes = codes[0, 0] # select the only example, and there is only one channel
-        return flatten_audio_tokens(codes)
+    to_tokens, sampling_rate = make_token_encoder()
 
     def add_codes(example):
-        audio, mask = prepare_audio(example["audio"]["array"], example["audio"]["sampling_rate"])
+        # clip audio
+        upper_ix = cfg.clip_audio_secs * example["audio"]["sampling_rate"] if cfg.clip_audio_secs else example["audio"]["array"].shape[-1]
+        audio = example["audio"]["array"][..., :upper_ix]
 
-        res = [to_tokens(audio, mask)]
+        res = [to_tokens(audio)]
 
         if "augmentation_factor" in cfg.__dict__:
             for _ in range(cfg.augmentation_factor - 1):
                 noise = torch.randn(*audio.shape) * cfg.augmentation_noise
-                res.append(to_tokens(audio+noise, mask))
+                res.append(to_tokens(audio+noise))
 
         return res
 
@@ -93,7 +37,7 @@ def tokenize_speech(cfg, ds, concat_shards=True):
     def add_toks(example):
         return tokenizer(example["normalized_text"])
 
-    ds = ds.cast_column("audio", Audio(sampling_rate=processor.sampling_rate))
+    ds = ds.cast_column("audio", Audio(sampling_rate=sampling_rate))
 
     tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
 
