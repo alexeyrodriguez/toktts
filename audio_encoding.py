@@ -32,29 +32,6 @@ def unflatten_audio_tokens(codes):
     codes = np.array(codes).reshape(num_toks, 2).transpose(1, 0)
     return codes.reshape(2, num_toks)
 
-def make_token_decoder():
-    model = EncodecModel.from_pretrained("facebook/encodec_24khz")
-    processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
-
-    def decode(toks):
-        toks = unflatten_audio_tokens(toks)
-        toks = torch.tensor(toks).view(1, 1, 2, -1)
-        audio_values = model.decode(toks, [None])[0]
-        return audio_values[0, 0].detach()
-
-    return decode, processor.sampling_rate
-
-class EncodecDecoder():
-    def __init__(self):
-       self.model = EncodecModel.from_pretrained("facebook/encodec_24khz")
-    def __call__(self, toks):
-        toks = toks[0] # We only work with batch size 1 for now
-        toks = toks if isinstance(toks, list) else toks.tolist()
-        toks = unflatten_audio_tokens(toks)
-        toks = torch.tensor(toks).view(1, 1, 2, -1)
-        audio_values = self.model.decode(toks, [None])[0]
-        return audio_values[0, 0]
-
 
 def make_token_encoder():
     model = EncodecModel.from_pretrained("facebook/encodec_24khz")
@@ -74,6 +51,18 @@ def make_token_encoder():
         return flatten_audio_tokens(codes)
     
     return to_tokens, processor.sampling_rate
+
+
+class EncodecDecoder():
+    def __init__(self):
+       self.model = EncodecModel.from_pretrained("facebook/encodec_24khz")
+    def __call__(self, toks):
+        toks = toks[0] # We only work with batch size 1 for now
+        toks = toks if isinstance(toks, list) else toks.tolist()
+        toks = unflatten_audio_tokens(toks)
+        toks = torch.tensor(toks).view(1, 1, 2, -1)
+        audio_values = self.model.decode(toks, [None])[0]
+        return audio_values[0, 0]
 
 
 def text_to_speech_pipeline(model):
