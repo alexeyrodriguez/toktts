@@ -1,7 +1,8 @@
 from datasets import load_dataset, concatenate_datasets
-from transformers import EncodecModel, AutoProcessor
+from transformers import AutoTokenizer, EncodecModel, AutoProcessor, pipeline
 import torch
 import numpy as np
+import audio_encoding
 
 from dataset_utils import map_list
 
@@ -43,6 +44,18 @@ def make_token_decoder():
 
     return decode, processor.sampling_rate
 
+class EncodecDecoder():
+    def __init__(self):
+       self.model = EncodecModel.from_pretrained("facebook/encodec_24khz")
+    def __call__(self, toks):
+        toks = toks[0] # We only work with batch size 1 for now
+        toks = toks if isinstance(toks, list) else toks.tolist()
+        toks = unflatten_audio_tokens(toks)
+        toks = torch.tensor(toks).view(1, 1, 2, -1)
+        audio_values = self.model.decode(toks, [None])[0]
+        return audio_values[0, 0]
+
+
 def make_token_encoder():
     model = EncodecModel.from_pretrained("facebook/encodec_24khz")
     processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
@@ -61,3 +74,11 @@ def make_token_encoder():
         return flatten_audio_tokens(codes)
     
     return to_tokens, processor.sampling_rate
+
+
+def text_to_speech_pipeline(model):
+    tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
+    processor = AutoProcessor.from_pretrained("facebook/encodec_24khz")
+    pip = pipeline("text-to-speech", model=model, tokenizer=tokenizer, sampling_rate=processor.sampling_rate)
+    pip.vocoder = audio_encoding.EncodecDecoder() # cheat a bit
+    return pip
