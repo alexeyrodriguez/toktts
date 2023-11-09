@@ -35,11 +35,12 @@ if __name__=='__main__':
     parser.add_argument('--config', action = 'append', type = str, help = 'Configuration', required=True)
     parser.add_argument('--text', action = 'store', type = str, help = 'Text to speak')
     parser.add_argument('--yconfig', action = 'append', type = str, help = 'Inline yaml config, useful for config overriding')
+    parser.add_argument('--with-model', action = 'store', type = str, help = 'Model file')
     args = parser.parse_args()
 
     cfg = pconfig.load_config(args.config, args.yconfig)
 
-    pipeline = audio_encoding.text_to_speech_pipeline(pconfig.model_path(cfg.model.name, None))
+    pipeline = audio_encoding.text_to_speech_pipeline(pconfig.model_path(cfg.model.name, args.with_model))
 
     if not args.text:
         torch.manual_seed(0) # Needed to make encodec model weights deterministic and hence reuse cache
