@@ -8,7 +8,7 @@ results, without an excessive GPU budget and without excessive hacking time.
 The following design decisions support the above simplicity goal:
  * Use a pure discrete token transformer architecture rather than directly generating mel/linear
  spectrograms or time domain waveforms.
- This is not a new idea, there are several projects that also use Meta's Encodec for this purpose. (TODO REFS)
+ This is not a new idea, there are several projects that also use Meta's [Encodec](https://github.com/facebookresearch/encodec) for this purpose. (TODO REFS)
  Directly working with tokens means that we don't have to worry about finicky details about losses
  in the spectral/time domain.
  * Use an encoder decoder architecture, rather than a purely decoder transformer in order to avoid
@@ -30,7 +30,7 @@ Some technical details about the implementation:
  * The model is an encoder-decoder architecture. The encoder encodes the input characters
  (no phonemizer) into a latent representation which the decoder consumes using cross-attention.
  The decoder models the audio tokens in a causal way.
- * The audio tokens are obtained using Meta's Encodec (TODO REF) from the first two
+ * The audio tokens are obtained using Meta's [Encodec](https://github.com/facebookresearch/encodec) from the first two
  seconds of the audio waveforms.
  We use the lowest fidelity of encoding (1.5kbps) which encodes audio at a rate of
  `75Hz` with two discrete tokens each out of a vocabulary of size `1024`. We arrive at
@@ -64,7 +64,7 @@ After installation, to start a simple training, try:
 python trainer.py --config config/basic/small_train.yaml
 ```
 
-This invocation will download LJSpeech (TODO REF) (~13K training examples) and generate datasets for a small amount of examples.
+This invocation will download [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) (~13K training examples) and generate datasets for a small amount of examples.
 
 It is highly recommended to log training runs in wandb by modifying and using the template file in `config/templates/wandb_TEMPLATE.yaml`.
 
