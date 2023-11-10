@@ -43,8 +43,8 @@ Some technical details about the implementation:
 # Installation
 
 A reasonable machine to train the models in this repository would require at least 16 CPU cores, 120Gb of disk space,
-150Gb of RAM and a GPU like the RTX4090. The amount of RAM is required to allow fast generation of the training
-dataset. There seems to be a memory leak, possibly in Encodec. One can sidestep the need for RAM using the `shards`
+150Gb of RAM and a GPU like the RTX4090. The amount of RAM and CPU cores are required to allow fast generation of the training
+dataset. There seems to be a memory leak, possibly in Encodec. One can sidestep the need for RAM due to the leak using the `shards`
 option in the configuration.
 
 Assuming a machine like the above, the model in `config/two_secs_augmented/ex_small.yaml` would train in about 7 hours
