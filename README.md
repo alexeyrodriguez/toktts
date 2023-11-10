@@ -19,7 +19,11 @@ The following design decisions support the above simplicity goal:
  appears that short text inputs have low performance in fitted models.
  * Try to keep feature engineering simple, no separate preprocessing data script, all processing
  in a single machine, no phonemizer.
+ * Also there is not text normalization (e.g. `1` to `one`, it would be great to add it)
  
+For see some quick examples, please see the example Notebook here:
+[sample_from_model.ipynb](https://nbviewer.org/github/alexeyrodriguez/toktts/blob/main/sample_from_model.ipynb)
+
 # Setup 
 
 Some technical details about the implementation:
@@ -79,3 +83,7 @@ The model that is used in the example notebook was trained from `config/two_secs
 The model was trained for 89 epochs (interrupted), uses an augmentation factor of 4 and a batch size of 64.
 This model produces interesting examples but unfortunately the augmentation appears to generate a faint clicking
 background that is absent without augmentation (and yes, augmentation prevents overfitting for that model).
+
+## Example Notebook
+
+The example Notebook can be viewed here: [sample_from_model.ipynb](https://nbviewer.org/github/alexeyrodriguez/toktts/blob/main/sample_from_model.ipynb)
