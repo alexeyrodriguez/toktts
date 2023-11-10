@@ -1,23 +1,25 @@
-# An exploration of Text to Speech using a sequence to sequence transformer
+# toktts
 
-`toktts` is an exploration in building a Text-to-Speech (TTS) system using a transformer
-architecture with discrete tokens. The goal is to create a system that is easy to play with,
-and easy to get interesting results without excessive GPU budget and without excessive hacking
-time. The following design decisions support the above simplicity goal:
+`toktts` is an exploration in building a Text-to-Speech (TTS) system using a sequence-to-sequence
+transformer architecture with discrete tokens.
+
+The goal is to create a system that is easy to play with, and with which it is easy to get interesting
+results, without an excessive GPU budget and without excessive hacking time.
+The following design decisions support the above simplicity goal:
  * Use a pure discrete token transformer architecture rather than directly generating mel/linear
  spectrograms or time domain waveforms.
  This is not a new idea, there are several projects that also use Meta's Encodec for this purpose. (TODO REFS)
  Directly working with tokens means that we don't have to worry about finicky details about losses
  in the spectral/time domain.
  * Use an encoder decoder architecture, rather than a purely decoder transformer in order to avoid
- the bookkeeping of having text and audio tokens in the same sequence.
+ the bookkeeping of having btoh text and audio tokens in the same sequence.
  * Generate only the first two seconds of audio to save compute budget.
- `toktts`` does not attempt to shorten the input text to match the smaller audio size, probably it would be a good idea as it
+ `toktts` does not attempt to shorten the input text to match the smaller audio size,
+ probably it would be a good idea to do so as it
  appears that short text inputs have low performance in fitted models.
- But we could improve on this aspect working on the dataset.
- * Use Hugging Face's dataset to cache Encodec's discrete audio encoding and use one single large
- machine to generate the features (discrete audio tokens) rather than a more complex distributed setup.
-
+ * Try to keep feature engineering simple, no separate preprocessing data script, all processing
+ in a single machine, no phonemizer.
+ 
 # Setup 
 
 Some technical details about the implementation:
@@ -31,6 +33,8 @@ Some technical details about the implementation:
  the 1.5kpbs bit rate by `75 * 2 * 10` which yields `1500` bits per second.
  Taking into account two seconds of audio that we use, the TTS model needs to generate
  a sequence of 300 audio tokens.
+ * To keep feature engineering simple, we prefer to use a large machine for generating datasets
+ and use caching from Hugging Face's `datasets` package as much as possible.
 
 # Installation
 
