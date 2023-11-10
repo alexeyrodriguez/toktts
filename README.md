@@ -47,16 +47,16 @@ A reasonable machine to train the models in this repository would require at lea
 dataset. There seems to be a memory leak, possibly in Encodec. One can sidestep the need for RAM using the `shards`
 option in the configuration.
 
-Assuming a machine like the above, ehe model in `config/two_secs_augmented/ex_small.yaml` would train in about 7 hours
+Assuming a machine like the above, the model in `config/two_secs_augmented/ex_small.yaml` would train in about 7 hours
 with about 1 additional hour to generate the training and validation datasets.
 
-One can create a conda training environment using `conda-environment.yaml`. It's important to have
-the right versions of packages otherwise the dataset generation takes too long for a reason that I haven't yet
+One can create a `conda` training environment using `conda-environment.yaml`. It's important to have
+the right versions of packages, otherwise the dataset generation takes too long for a reason that I haven't yet
 figured out.
 
 # Running
 
-Initially I used Google Cloud Platform but it turned out to be much cheaoer to rent a server from https://vast.ai/.
+Initially I used Google Cloud Platform but it turned out to be much cheaper to rent a server from https://vast.ai/.
 
 After installation, to start a simple training, try:
 
@@ -64,7 +64,7 @@ After installation, to start a simple training, try:
 python trainer.py --config config/basic/small_train.yaml
 ```
 
-This invocation will download LJSpeech (~13K training examples) and generate datasets for a small amount of examples.
+This invocation will download LJSpeech (TODO REF) (~13K training examples) and generate datasets for a small amount of examples.
 
 It is highly recommended to log training runs in wandb by modifying and using the template file in `config/templates/wandb_TEMPLATE.yaml`.
 
@@ -75,7 +75,7 @@ python generate_samples.py --config config/basic/small_train.yaml
 ```
 
 Alternatively one can use custom text passing the `--text` option or even better one can use the provided pipeline
-from within a Notebook for example:
+from within a Notebook, for example:
 
 ```python
 pipeline = text_to_speech_pipeline(model_path)
