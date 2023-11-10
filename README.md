@@ -3,6 +3,9 @@
 `toktts` is an exploration in building a Text-to-Speech (TTS) system using a sequence-to-sequence
 transformer architecture with discrete tokens.
 
+For some quick examples, see the example Notebook here:
+[sample_from_model.ipynb](https://nbviewer.org/github/alexeyrodriguez/toktts/blob/main/sample_from_model.ipynb)
+
 The goal is to create a system that is easy to play with, and with which it is easy to get interesting
 results, without an excessive GPU budget and without excessive hacking time.
 The following design decisions support the above simplicity goal:
@@ -21,9 +24,6 @@ The following design decisions support the above simplicity goal:
  in a single machine, no phonemizer, also no input text tokenization (one character is one token).
  * Also there is no text normalization (e.g. `1` to `one`, it would be great to add it)
  
-For some quick examples, see the example Notebook here:
-[sample_from_model.ipynb](https://nbviewer.org/github/alexeyrodriguez/toktts/blob/main/sample_from_model.ipynb)
-
 # Setup 
 
 Some technical details about the implementation:
