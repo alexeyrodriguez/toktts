@@ -16,6 +16,9 @@ The following design decisions support the above simplicity goal:
  in the spectral/time domain.
  * Use an encoder decoder architecture, rather than a purely decoder transformer in order to avoid
  the bookkeeping of having both text and audio tokens in the same sequence.
+ * Using a pure transformer architecture allows us to more easily get a decent utilization of the GPU
+ (provided that features are computed efficiently, which is the case due to caching and
+ small sequence length) and hence a better use of our GPU budget.
  * Generate only the first two seconds of audio to save compute budget.
  `toktts` does not attempt to shorten the input text to match the smaller audio size,
  probably it would be a good idea to do so as it
