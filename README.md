@@ -19,7 +19,7 @@ The following design decisions support the above simplicity goal:
  appears that short text inputs have low performance in fitted models.
  * Try to keep feature engineering simple, no separate preprocessing data script, all processing
  in a single machine, no phonemizer, also no input text tokenization (one character is one token).
- * Also there is not text normalization (e.g. `1` to `one`, it would be great to add it)
+ * Also there is no text normalization (e.g. `1` to `one`, it would be great to add it)
  
 For see some quick examples, please see the example Notebook here:
 [sample_from_model.ipynb](https://nbviewer.org/github/alexeyrodriguez/toktts/blob/main/sample_from_model.ipynb)
@@ -28,14 +28,14 @@ For see some quick examples, please see the example Notebook here:
 
 Some technical details about the implementation:
  * The model is an encoder-decoder architecture. The encoder encodes the input characters
- (no phonemizer) into a latent representation which the decoder tower uses with cross-attention.
+ (no phonemizer) into a latent representation which the decoder consumes using cross-attention.
  The decoder models the audio tokens in a causal way.
  * The audio tokens are obtained using Meta's Encodec (TODO REF) from the first two
  seconds of the audio waveforms.
  We use the lowest fidelity of encoding (1.5kbps) which encodes audio at a rate of
  `75Hz` with two discrete tokens each out of a vocabulary of size `1024`. We arrive at
  the 1.5kpbs bit rate by `75 * 2 * 10` which yields `1500` bits per second.
- Taking into account two seconds of audio that we use, the TTS model needs to generate
+ Taking into account the two seconds of audio that we use, the TTS model needs to generate
  a sequence of 300 audio tokens.
  * To keep feature engineering simple, we prefer to use a large machine for generating datasets
  and use caching from Hugging Face's `datasets` package as much as possible.
@@ -47,20 +47,22 @@ A reasonable machine to train the models in this repository would require at lea
 dataset. There seems to be a memory leak, possibly in Encodec. One can sidestep the need for RAM using the `shards`
 option in the configuration.
 
-The model in `config/two_secs_augmented/ex_small.yaml` would train in a configuration like the above in about 7 hours
+Assuming a machine like the above, ehe model in `config/two_secs_augmented/ex_small.yaml` would train in about 7 hours
 with about 1 additional hour to generate the training and validation datasets.
 
-One can create a working training conda training environment with `conda-environment.yaml`. It's important to have
-the right versions of packages otherwise the dataset generation takes too long, for a reason that I haven't yet
+One can create a conda training environment using `conda-environment.yaml`. It's important to have
+the right versions of packages otherwise the dataset generation takes too long for a reason that I haven't yet
 figured out.
 
 # Running
 
-Initially I used Google Cloud Platform but it turned out to be much more economic to rent a server on vast.ai.
+Initially I used Google Cloud Platform but it turned out to be much cheaoer to rent a server from https://vast.ai/.
 
-When packages are installed one can start simple training runnning:
+After installation, to start a simple training, try:
 
-> python trainer.py --config config/basic/small_train.yaml
+```
+python trainer.py --config config/basic/small_train.yaml
+```
 
 This invocation will download LJSpeech (~13K training examples) and generate datasets for a small amount of examples.
 
@@ -68,14 +70,18 @@ It is highly recommended to log training runs in wandb by modifying and using th
 
 After running the trainer one can generate samples using parts of the training and validation datasets using the generation script:
 
-> python generate_samples.py --config config/basic/small_train.yaml
+```
+python generate_samples.py --config config/basic/small_train.yaml
+```
 
 Alternatively one can use custom text passing the `--text` option or even better one can use the provided pipeline
 from within a Notebook for example:
 
-> pipeline = text_to_speech_pipeline(model_path)
-> audio = pipeline("I am happy you are here", forward_params=forward_params)
-> IPython.display.Audio(audio["audio"], rate=audio["sampling_rate"])
+```python
+pipeline = text_to_speech_pipeline(model_path)
+audio = pipeline("I am happy you are here", forward_params=forward_params)
+IPython.display.Audio(audio["audio"], rate=audio["sampling_rate"])
+```
 
 See the example notebook for an example on how to set `forward_params`.
 
