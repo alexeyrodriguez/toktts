@@ -12,13 +12,13 @@ The following design decisions support the above simplicity goal:
  Directly working with tokens means that we don't have to worry about finicky details about losses
  in the spectral/time domain.
  * Use an encoder decoder architecture, rather than a purely decoder transformer in order to avoid
- the bookkeeping of having btoh text and audio tokens in the same sequence.
+ the bookkeeping of having both text and audio tokens in the same sequence.
  * Generate only the first two seconds of audio to save compute budget.
  `toktts` does not attempt to shorten the input text to match the smaller audio size,
  probably it would be a good idea to do so as it
  appears that short text inputs have low performance in fitted models.
  * Try to keep feature engineering simple, no separate preprocessing data script, all processing
- in a single machine, no phonemizer.
+ in a single machine, no phonemizer, also no input text tokenization (one character is one token).
  * Also there is not text normalization (e.g. `1` to `one`, it would be great to add it)
  
 For see some quick examples, please see the example Notebook here:
